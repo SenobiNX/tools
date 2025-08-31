@@ -92,8 +92,6 @@ def write_acid(contents: dict, sac_writer: BinaryWriter, kc_writer: BinaryWriter
     writer.write_u32(kc_offset)
     writer.write_u32(kc_size)
 
-    print(hex(len(writer.stream)))
-
     return writer
 
 
