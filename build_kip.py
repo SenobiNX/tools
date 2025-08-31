@@ -93,7 +93,7 @@ def main():
 
         writer.seek(file_offset)
         if is_use_compression:
-            raise NotImplementedError("BLZ compression not supported")
+            abort("BLZ compression not supported")
         else:
             comp_size = writer.write_bytes(segment_data)
 
