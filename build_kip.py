@@ -88,9 +88,6 @@ def main():
         elf.stream.seek(segment.header.p_offset)
         segment_data = elf.stream.read(decomp_size)
 
-        with open(f"segment{i}.bin", "wb") as outf:
-            outf.write(segment_data)
-
         writer.seek(file_offset)
         if is_use_compression:
             abort("BLZ compression not supported")
