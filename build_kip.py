@@ -78,8 +78,6 @@ def main():
     bss_end = rw_segment.header.p_memsz
     bss_decomp_size = round_up(max(0, bss_end - bss_start), 0x1000)
 
-    print(f"{bss_decomp_size = :x}")
-
     # write KIP segment headers
 
     file_offset = header_size
