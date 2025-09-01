@@ -12,8 +12,8 @@ def abort_unless(cond: bool, msg: str):
         abort(msg)
 
 def round_up(x: int, alignment: int) -> int:
-    delta = (-x % alignment + alignment) % alignment
-    return x + delta
+    # TODO: abort if Not power of 2
+    return (x + alignment - 1) & ~(alignment - 1)
 
 
 class ByteOrder(enum.Enum):
@@ -49,7 +49,7 @@ class BinaryWriter:
         self.seek(offset, relative=True)
 
     def align(self, alignment: int):
-        self.seek_rel(round_up(self.position, alignment))
+        self.seek(round_up(self.position, alignment))
 
     def _fill_bytes(self, offset: int, relative: bool = True):
         bytes_to_add = offset - len(self.stream)
