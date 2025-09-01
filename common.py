@@ -12,7 +12,7 @@ def abort_unless(cond: bool, msg: str):
         abort(msg)
 
 def round_up(x: int, alignment: int) -> int:
-    # TODO: abort if Not power of 2
+    abort_unless(alignment > 0 and ((alignment & (alignment - 1)) == 0), "alignment must be a power of 2")
     return (x + alignment - 1) & ~(alignment - 1)
 
 
