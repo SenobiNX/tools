@@ -60,7 +60,7 @@ def align(offset: int, alignment: int):
 
 def pretty_size(size: int) -> str:
     if size < 1024:
-        return "{}".format(size)
+        return "{} ".format(size)
     elif size < 1024 * 1024:
         return "{:.1f}K".format(size / 1024)
     elif size < 1024 * 1024 * 1024:
@@ -113,12 +113,13 @@ def main():
             entries.append((entry_data_offset, size, name))
         
         if not args.quiet:
-            longest_name_len = len(max(entries, key=lambda k: len(k[2]))[2])
+            longest_name_len = max(map(lambda k: len(k[2]), entries))
+            longest_size_len = max(map(lambda k: len(pretty_size(k[1])), entries))
             print("{:^{width}} | size".format("file name", width=longest_name_len))
-            print("{}+--------".format("-" * (longest_name_len + 1)))
+            print("{}+{}".format("-" * (longest_name_len + 1), "-" * (longest_size_len + 2)))
 
-            for _, size, name in sorted(entries, key=lambda k: k[1]):
-                print("{:{width}} | {}".format(name, pretty_size(size), width=longest_name_len))
+            for _, size, name in sorted(entries, key=lambda k: k[1], reverse=True):
+                print("{:{name_width}} | {:>{size_width}}".format(name, pretty_size(size), name_width=longest_name_len, size_width=longest_size_len))
             
             print()
 
