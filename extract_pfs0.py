@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import shutil
 import struct
 import sys
 import typing
@@ -57,12 +58,23 @@ def align(offset: int, alignment: int):
     delta = (-offset % alignment + alignment) % alignment
     return offset + delta
 
+def pretty_size(size: int) -> str:
+    if size < 1024:
+        return "{}".format(size)
+    elif size < 1024 * 1024:
+        return "{:.1f}K".format(size / 1024)
+    elif size < 1024 * 1024 * 1024:
+        return "{:.1f}M".format(size / 1024 / 1024)
+    elif size < 1024 * 1024 * 1024 * 1024:
+        return "{:.1f}G".format(size / 1024 / 1024 / 1024)
+    else:
+        return "{}".format(size)
 
 def main():
     parser = argparse.ArgumentParser(description="extract PFS0 file to directory")
     parser.add_argument("infile")
     parser.add_argument("outdir", nargs="?")
-    # parser.add_argument("-q", "--quiet", action="store_true")
+    parser.add_argument("-q", "--quiet", action="store_true")
 
     args = parser.parse_args()
 
@@ -72,25 +84,53 @@ def main():
     os.makedirs(outdir, exist_ok=True)
 
     with open(args.infile, "rb") as f:
-        contents = f.read()
+        header = f.read(0x10)
     
-    read_signature(contents, 0x0, 4, "PFS0")
-    entry_count = read_u32(contents, 0x4)
-    string_pool_size = read_u32(contents, 0x8)
-    string_pool_offset = 0x10 + 0x18 * entry_count
-    data_offset = string_pool_offset + string_pool_size
+        read_signature(header, 0x0, 4, "PFS0")
+        entry_count = read_u32(header, 0x4)
+        string_pool_size = read_u32(header, 0x8)
+        string_pool_offset = 0x10 + 0x18 * entry_count
+        data_offset = string_pool_offset + string_pool_size
 
-    for i in range(entry_count):
-        entry_offset = 0x10 + 0x18 * i
-        offset = read_u64(contents, entry_offset)
-        size = read_u64(contents, entry_offset + 0x8)
-        string_offset = read_u32(contents, entry_offset + 0x10)
+        if entry_count == 0:
+            print("finished (PFS0 entry count: 0)")
+            return 0
 
-        string = read_string(contents, string_pool_offset + string_offset)
-        entry_data_offset = data_offset + offset
+        f.seek(string_pool_offset)
+        string_pool = f.read(string_pool_size)
 
-        with open(os.path.join(outdir, string), "wb") as f:
-            f.write(contents[entry_data_offset:entry_data_offset+size])
+        entries = []
+        f.seek(0x10)
+        for i in range(entry_count):
+            entry_header = f.read(0x18)
+            offset = read_u64(entry_header, 0x0)
+            size = read_u64(entry_header, 0x8)
+            name_offset = read_u32(entry_header, 0x10)
+
+            name = read_string(string_pool, name_offset)
+            entry_data_offset = data_offset + offset
+
+            entries.append((entry_data_offset, size, name))
+        
+        if not args.quiet:
+            longest_name_len = len(max(entries, key=lambda k: len(k[2]))[2])
+            print("{:^{width}} | size".format("file name", width=longest_name_len))
+            print("{}+--------".format("-" * (longest_name_len + 1)))
+
+            for _, size, name in sorted(entries, key=lambda k: k[1]):
+                print("{:{width}} | {}".format(name, pretty_size(size), width=longest_name_len))
+            
+            print()
+
+        for offset, size, name in entries:
+            out_path = os.path.join(outdir, name)
+
+            if not args.quiet:
+                print("copying {} to {}...".format(name, out_path))
+
+            f.seek(offset)
+            with open(out_path, "wb") as outf:
+                shutil.copyfileobj(f, outf, size)
 
 
 if __name__ == "__main__":
