@@ -1,6 +1,7 @@
 import enum
 import io
 import struct
+import sys
 import typing
 
 def abort(msg: str):
@@ -10,6 +11,13 @@ def abort(msg: str):
 def abort_unless(cond: bool, msg: str):
     if not cond:
         abort(msg)
+
+def warn(msg: str):
+    print(f"warning: {msg}")
+
+def warn_unless(cond: bool, msg: str):
+    if not cond:
+        warn(msg)
 
 def round_up(x: int, alignment: int) -> int:
     abort_unless(alignment > 0 and ((alignment & (alignment - 1)) == 0), "alignment must be a power of 2")
@@ -137,6 +145,9 @@ class BinaryReader:
             self._position += offset
         else:
             self._position = offset
+    
+    def seek_rel(self, offset: int):
+        self.seek(offset, relative=True)
 
     @staticmethod
     def _check_len(buffer: bytes, size: int):
@@ -274,7 +285,7 @@ class BinaryReader:
     def read_signature(self, size: int, expected: str) -> str:
         signature = self.read_string("ascii", size)
         if signature != expected:
-            Log.error(f"file signature was {signature}, expected {expected}")
+            abort(f"file signature was {signature}, expected {expected}")
         
         return signature
     
@@ -286,7 +297,7 @@ class BinaryReader:
         elif byte_order == b'\xFF\xFE':
             self.byte_order = ByteOrder.little
         else:
-            Log.error("invalid byte order")
+            abort("invalid byte order")
         
         return self.byte_order
     

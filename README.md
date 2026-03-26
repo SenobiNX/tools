@@ -26,8 +26,16 @@ usage: build_kip.py [-h] in_elf in_json [outfile]
 
 ### build_npdm.py
 
-generate NPDM file from JSON
+generate NPDM file from hactool JSON format
 
 ```
 usage: build_npdm.py [-h] infile [outfile]
+```
+
+### parse_npdm.py
+
+generate TOML file from NPDM file
+
+```
+usage: parse_npdm.py [-h] infile outfile
 ```
